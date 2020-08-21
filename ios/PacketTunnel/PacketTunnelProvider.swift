@@ -218,6 +218,66 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Tunnel management
 
+    private func makeStartTunnelOperation() -> Operation {
+        let makeTunnelConfigOperation = MakePacketTunnelConfigurationOperation(passwordReference: protocolConfiguration.passwordReference)
+        let networkSettingsOperation = SetTunnelNetworkSettingsOperation(tunnelProvider: self).inject(from: makeTunnelConfigOperation) { (output) -> NETunnelNetworkSettings? in
+            switch output {
+            case .success(let tunnelConfig):
+                let settingsGenerator = PacketTunnelSettingsGenerator(
+                    mullvadEndpoint: tunnelConfig.selectorResult.endpoint,
+                    tunnelSettings: tunnelConfig.tunnelSettings
+                )
+                return settingsGenerator.networkSettings()
+            case .failure(let error):
+                // TODO: ???
+                return nil
+            }
+        }
+
+        let startWireguardOperation = StartWireguardOperation(packetFlow: self.packetFlow)
+            .inject(from: makeTunnelConfigOperation) { (output) -> WireguardConfiguration? in
+                switch output {
+                case .success(let tunnelConfig):
+                    return tunnelConfig.wireguardConfig
+                case .failure(let error):
+                    // TODO: ???
+                    return nil
+                }
+        }
+        startWireguardOperation.addDependency(networkSettingsOperation)
+
+        let startPeriodicTasksOperation = TransformOperation<Data, Void>(input: protocolConfiguration.passwordReference) { (keychainReference, finish) in
+            let keyRotationManager = AutomaticKeyRotationManager(persistentKeychainReference: keychainReference)
+
+            keyRotationManager.eventHandler = { (keyRotationEvent) in
+                self.dispatchQueue.async {
+                    self.reloadTunnelSettings { (result) in
+                        switch result {
+                        case .success:
+                            break
+                        case .failure(let error):
+                            self.logger.error(chainedError: error, message: "Failed to reload tunnel settings")
+                        }
+                    }
+                }
+            }
+
+            RelayCache.shared.startPeriodicUpdates {
+                keyRotationManager.startAutomaticRotation {
+                    finish(())
+                }
+            }
+        }
+        startPeriodicTasksOperation.addDependency(startWireguardOperation)
+        
+        return GroupOperation(operations: [
+            makeTunnelConfigOperation,
+            networkSettingsOperation,
+            startWireguardOperation,
+            startPeriodicTasksOperation
+        ])
+    }
+
     private func doStartTunnel(completionHandler: @escaping (Result<(), PacketTunnelProviderError>) -> Void) {
         makePacketTunnelConfig { (result) in
             guard case .success(let packetTunnelConfig) = result else {
@@ -487,6 +547,139 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 .mapError { PacketTunnelProviderError.startWireguardDevice($0) }
 
             completionHandler(result)
+        }
+    }
+}
+
+class MakePacketTunnelConfigurationOperation: AsyncOperation, InputOperation, OutputOperation {
+    typealias Input = Data
+    typealias Output = Result<PacketTunnelConfiguration, PacketTunnelProviderError>
+
+    init(passwordReference: Data? = nil) {
+        super.init()
+        self.input = passwordReference
+    }
+
+    override func main() {
+        guard let passwordReference = input else {
+            finish(with: .failure(.missingKeychainConfigurationReference))
+            return
+        }
+
+        Self.makePacketTunnelConfig(keychainReference: passwordReference) { (result) in
+            self.finish(with: result)
+        }
+    }
+
+    /// Returns a `PacketTunnelConfig` that contains the tunnel settings and selected relay
+    private class func makePacketTunnelConfig(keychainReference: Data, completionHandler: @escaping (Result<PacketTunnelConfiguration, PacketTunnelProviderError>) -> Void) {
+        switch Self.readTunnelSettings(keychainReference: keychainReference) {
+        case .success(let tunnelSettings):
+            Self.selectRelayEndpoint(relayConstraints: tunnelSettings.relayConstraints) { (result) in
+                let result = result.map { (selectorResult) -> PacketTunnelConfiguration in
+                    return PacketTunnelConfiguration(
+                        persistentKeychainReference: keychainReference,
+                        tunnelSettings: tunnelSettings,
+                        selectorResult: selectorResult
+                    )
+                }
+                completionHandler(result)
+            }
+
+        case .failure(let error):
+            completionHandler(.failure(error))
+        }
+    }
+
+    /// Read tunnel settings from Keychain
+    private class func readTunnelSettings(keychainReference: Data) -> Result<TunnelSettings, PacketTunnelProviderError> {
+        TunnelSettingsManager.load(searchTerm: .persistentReference(keychainReference))
+            .mapError { PacketTunnelProviderError.cannotReadTunnelSettings($0) }
+            .map { $0.tunnelSettings }
+    }
+
+    /// Load relay cache with potential networking to refresh the cache and pick the relay for the
+    /// given relay constraints.
+    private class func selectRelayEndpoint(relayConstraints: RelayConstraints, completionHandler: @escaping (Result<RelaySelectorResult, PacketTunnelProviderError>) -> Void) {
+        RelayCache.shared.read { (result) in
+            switch result {
+            case .success(let cachedRelayList):
+                let relaySelector = RelaySelector(relays: cachedRelayList.relays)
+
+                if let selectorResult = relaySelector.evaluate(with: relayConstraints) {
+                    completionHandler(.success(selectorResult))
+                } else {
+                    completionHandler(.failure(.noRelaySatisfyingConstraint))
+                }
+
+            case .failure(let error):
+                completionHandler(.failure(.readRelayCache(error)))
+            }
+        }
+    }
+}
+
+class SetTunnelNetworkSettingsOperation: AsyncOperation, InputOperation, OutputOperation {
+    typealias Input = NETunnelNetworkSettings
+    typealias Output = Result<(), Error>
+
+    private let tunnelProvider: NEPacketTunnelProvider
+
+    init(tunnelProvider: NEPacketTunnelProvider, tunnelSettings: NETunnelNetworkSettings? = nil) {
+        self.tunnelProvider = tunnelProvider
+
+        super.init()
+
+        input = tunnelSettings
+    }
+
+    override func main() {
+        guard let tunnelSettings = input else {
+            finish()
+            return
+        }
+
+        tunnelProvider.setTunnelNetworkSettings(tunnelSettings) { [weak self] (error) in
+            guard let self = self, !self.isCancelled else { return }
+
+            self.finish(with: error.map { .failure($0) } ?? .success(()))
+        }
+    }
+
+    override func operationDidCancel() {
+        finish()
+    }
+}
+
+class StartWireguardOperation: AsyncOperation, InputOperation, OutputOperation {
+    typealias Input = WireguardConfiguration
+    typealias Output = Result<WireguardDevice, WireguardDevice.Error>
+
+    private let packetFlow: NEPacketTunnelFlow
+
+    init(packetFlow: NEPacketTunnelFlow, configuration: WireguardConfiguration? = nil) {
+        self.packetFlow = packetFlow
+
+        super.init()
+        input = configuration
+    }
+
+    override func main() {
+        guard let configuration = input else {
+            finish()
+            return
+        }
+
+        switch WireguardDevice.fromPacketFlow(packetFlow) {
+        case .success(let device):
+            device.start(configuration: configuration) { (result) in
+                self.finish(with: result.map({ (_) -> WireguardDevice in
+                    device
+                }))
+            }
+
+        case .failure(let error):
+            finish(with: .failure(error))
         }
     }
 }
