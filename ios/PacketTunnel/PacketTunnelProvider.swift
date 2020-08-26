@@ -103,6 +103,11 @@ extension PacketTunnelConfiguration {
     }
 }
 
+struct StartTunnelResult {
+    let wireguardDevice: WireguardDevice
+    let automaticKeyRotationManager: AutomaticKeyRotationManager
+}
+
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
     enum OperationCategory {
@@ -143,21 +148,20 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Subclass
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
-        logger.info("Start the tunnel")
+        let operation = makeStartTunnelOperation { (result) in
+            switch result {
+            case .success(let result):
+                self.wireguardDevice = result.wireguardDevice
+                self.keyRotationManager = result.automaticKeyRotationManager
 
-        let operation = AsyncBlockOperation { (finish) in
-            self.doStartTunnel { (result) in
-                switch result {
-                case .success:
-                    self.logger.info("Started the tunnel")
-                    completionHandler(nil)
+                self.logger.info("Started the tunnel")
 
-                case .failure(let error):
-                    self.logger.error(chainedError: error, message: "Failed to start the tunnel")
-                    completionHandler(error)
-                }
+                completionHandler(nil)
 
-                finish()
+            case .failure(let error):
+                self.logger.error(chainedError: error, message: "Failed to start the tunnel")
+
+                completionHandler(error)
             }
         }
 
@@ -218,35 +222,37 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Tunnel management
 
-    private func makeStartTunnelOperation() -> Operation {
+    private func makeStartTunnelOperation(completionHandler: @escaping (Result<StartTunnelResult, PacketTunnelProviderError>) -> Void) -> GroupOperation {
         let makeTunnelConfigOperation = MakePacketTunnelConfigurationOperation(passwordReference: protocolConfiguration.passwordReference)
-        let networkSettingsOperation = SetTunnelNetworkSettingsOperation(tunnelProvider: self).inject(from: makeTunnelConfigOperation) { (output) -> NETunnelNetworkSettings? in
+        let networkSettingsOperation = SetTunnelNetworkSettingsOperation(tunnelProvider: self).inject(from: makeTunnelConfigOperation) { (output) -> InjectionResult<NETunnelNetworkSettings> in
             switch output {
             case .success(let tunnelConfig):
                 let settingsGenerator = PacketTunnelSettingsGenerator(
                     mullvadEndpoint: tunnelConfig.selectorResult.endpoint,
                     tunnelSettings: tunnelConfig.tunnelSettings
                 )
-                return settingsGenerator.networkSettings()
+                return .success(settingsGenerator.networkSettings())
+
             case .failure(let error):
-                // TODO: ???
-                return nil
+                // TODO: handle error?
+                return .failure
             }
         }
 
         let startWireguardOperation = StartWireguardOperation(packetFlow: self.packetFlow)
-            .inject(from: makeTunnelConfigOperation) { (output) -> WireguardConfiguration? in
+            .inject(from: makeTunnelConfigOperation) { (output) -> InjectionResult<WireguardConfiguration> in
                 switch output {
                 case .success(let tunnelConfig):
-                    return tunnelConfig.wireguardConfig
+                    return .success(tunnelConfig.wireguardConfig)
                 case .failure(let error):
-                    // TODO: ???
-                    return nil
+                    // TODO: handle error?
+                    return .failure
                 }
         }
         startWireguardOperation.addDependency(networkSettingsOperation)
+        startWireguardOperation.setAllowDependencyFailuresAndCancellations(false)
 
-        let startPeriodicTasksOperation = TransformOperation<Data, Void>(input: protocolConfiguration.passwordReference) { (keychainReference, finish) in
+        let startKeyRotationOperation = TransformOperation<Data, AutomaticKeyRotationManager>(input: protocolConfiguration.passwordReference) { (keychainReference, finish) in
             let keyRotationManager = AutomaticKeyRotationManager(persistentKeychainReference: keychainReference)
 
             keyRotationManager.eventHandler = { (keyRotationEvent) in
@@ -262,72 +268,46 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
             }
 
-            RelayCache.shared.startPeriodicUpdates {
-                keyRotationManager.startAutomaticRotation {
-                    finish(())
-                }
+            keyRotationManager.startAutomaticRotation {
+                finish(keyRotationManager)
             }
         }
-        startPeriodicTasksOperation.addDependency(startWireguardOperation)
+        startKeyRotationOperation.addDependency(startWireguardOperation)
+        startKeyRotationOperation.setAllowDependencyFailuresAndCancellations(false)
+
+        let startRelayCachePeriodicUpdatesOperation = AsyncBlockOperation { (finish) in
+            RelayCache.shared.startPeriodicUpdates {
+                finish()
+            }
+        }
+        startRelayCachePeriodicUpdatesOperation.addDependency(startKeyRotationOperation)
+        startRelayCachePeriodicUpdatesOperation.setAllowDependencyFailuresAndCancellations(false)
+
+        let completionOperation = BlockOperation {
+            guard let wireguardDevice = try? startWireguardOperation.output.value?.get(),
+                let keyRotationManager = startKeyRotationOperation.output.value else {
+                    // TODO: Fix error, pass the right one!
+                    return completionHandler(.failure(PacketTunnelProviderError.missingKeychainConfigurationReference))
+            }
+
+            let result = StartTunnelResult(
+                wireguardDevice: wireguardDevice,
+                automaticKeyRotationManager: keyRotationManager
+            )
+
+            completionHandler(.success(result))
+        }
+        completionOperation.addDependency(startKeyRotationOperation)
+        completionOperation.addDependency(startWireguardOperation)
         
         return GroupOperation(operations: [
             makeTunnelConfigOperation,
             networkSettingsOperation,
             startWireguardOperation,
-            startPeriodicTasksOperation
+            startKeyRotationOperation,
+            startRelayCachePeriodicUpdatesOperation,
+            completionOperation
         ])
-    }
-
-    private func doStartTunnel(completionHandler: @escaping (Result<(), PacketTunnelProviderError>) -> Void) {
-        makePacketTunnelConfig { (result) in
-            guard case .success(let packetTunnelConfig) = result else {
-                completionHandler(result.map { _ in () })
-                return
-            }
-
-            self.updateNetworkSettings(packetTunnelConfig: packetTunnelConfig) { (result) in
-                guard case .success = result else {
-                    completionHandler(result)
-                    return
-                }
-
-                self.startWireguardDevice(packetFlow: self.packetFlow, configuration: packetTunnelConfig.wireguardConfig) { (result) in
-                    self.dispatchQueue.async {
-                        guard case .success(let device) = result else {
-                            completionHandler(result.map { _ in () })
-                            return
-                        }
-
-                        let persistentKeychainReference = packetTunnelConfig.persistentKeychainReference
-                        let keyRotationManager = AutomaticKeyRotationManager(persistentKeychainReference: persistentKeychainReference)
-                        keyRotationManager.eventHandler = { (keyRotationEvent) in
-                            self.dispatchQueue.async {
-                                self.reloadTunnelSettings { (result) in
-                                    switch result {
-                                    case .success:
-                                        break
-
-                                    case .failure(let error):
-                                        self.logger.error(chainedError: error, message: "Failed to reload tunnel settings")
-                                    }
-                                }
-                            }
-                        }
-
-                        self.wireguardDevice = device
-                        self.keyRotationManager = keyRotationManager
-
-                        RelayCache.shared.startPeriodicUpdates {
-                            keyRotationManager.startAutomaticRotation {
-                                self.dispatchQueue.async {
-                                    completionHandler(.success(()))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private func doStopTunnel(completionHandler: @escaping (Result<(), PacketTunnelProviderError>) -> Void) {
@@ -477,7 +457,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         operation.addDidFinishBlockObserver(queue: dispatchQueue) { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusivityController.addOperation(operation, categories: [.exclusive])
@@ -557,11 +537,11 @@ class MakePacketTunnelConfigurationOperation: AsyncOperation, InputOperation, Ou
 
     init(passwordReference: Data? = nil) {
         super.init()
-        self.input = passwordReference
+        self.input = passwordReference.map { .ready($0) } ?? .pending
     }
 
     override func main() {
-        guard let passwordReference = input else {
+        guard case .ready(let passwordReference) = input else {
             finish(with: .failure(.missingKeychainConfigurationReference))
             return
         }
@@ -630,12 +610,12 @@ class SetTunnelNetworkSettingsOperation: AsyncOperation, InputOperation, OutputO
 
         super.init()
 
-        input = tunnelSettings
+        input = tunnelSettings.map { .ready($0) } ?? .pending
     }
 
     override func main() {
-        guard let tunnelSettings = input else {
-            finish()
+        guard case .ready(let tunnelSettings) = input else {
+            finish(error: OperationError.inputRequirement)
             return
         }
 
@@ -661,11 +641,11 @@ class StartWireguardOperation: AsyncOperation, InputOperation, OutputOperation {
         self.packetFlow = packetFlow
 
         super.init()
-        input = configuration
+        input = configuration.map { .ready($0) } ?? .pending
     }
 
     override func main() {
-        guard let configuration = input else {
+        guard case .ready(let configuration) = input else {
             finish()
             return
         }
