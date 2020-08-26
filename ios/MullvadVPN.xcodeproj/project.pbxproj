@@ -54,6 +54,7 @@
 		581CBCEC2298041B00727D7F /* SettingsAppVersionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581CBCEB2298041B00727D7F /* SettingsAppVersionCell.swift */; };
 		581CBCEE229826FD00727D7F /* StaticTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581CBCED229826FD00727D7F /* StaticTableViewDataSource.swift */; };
 		58283D1F24F65C600047E0E5 /* OperationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58283D1E24F65C600047E0E5 /* OperationError.swift */; };
+		58283D2024F65E7A0047E0E5 /* OperationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58283D1E24F65C600047E0E5 /* OperationError.swift */; };
 		582AE3102440A6CA00E6733A /* AccountTokenInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582AE30F2440A6CA00E6733A /* AccountTokenInput.swift */; };
 		582AE3122440CA0D00E6733A /* AccountTokenInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582AE3112440CA0D00E6733A /* AccountTokenInputTests.swift */; };
 		582AE3132440CA2700E6733A /* AccountTokenInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582AE30F2440A6CA00E6733A /* AccountTokenInput.swift */; };
@@ -1098,6 +1099,7 @@
 				5860F1C223A785C600CEA666 /* WireguardDevice.swift in Sources */,
 				580EE21624B3231200F9D8A1 /* OperationBlockObserver.swift in Sources */,
 				58CC40F024A602780019D96E /* ObserverList.swift in Sources */,
+				58283D2024F65E7A0047E0E5 /* OperationError.swift in Sources */,
 				58C6B35522BB87C4003C19AD /* WireguardPrivateKey.swift in Sources */,
 				581503A724D6F4AE00C9C50E /* Logging.swift in Sources */,
 				58FAEE0424533AC000CB0F5B /* KeychainClass.swift in Sources */,

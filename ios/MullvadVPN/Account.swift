@@ -92,8 +92,8 @@ class Account {
     func loginWithNewAccount(completionHandler: @escaping (Result<AccountResponse, Error>) -> Void) {
         let operation = rest.createAccount().operation(payload: EmptyPayload())
 
-        operation.addDidFinishBlockObserver(queue: .main) { (operation, result) in
-            switch result {
+        operation.addDidFinishBlockObserver(queue: .main) { (operation, error) in
+            switch operation.output! {
             case .success(let response):
                 self.setupTunnel(accountToken: response.token, expiry: response.expires) { (result) in
                     completionHandler(result.map { response })
@@ -113,8 +113,8 @@ class Account {
         let operation = rest.getAccountExpiry()
             .operation(payload: .init(token: accountToken, payload: EmptyPayload()))
 
-        operation.addDidFinishBlockObserver(queue: .main) { (operation, result) in
-            switch result {
+        operation.addDidFinishBlockObserver(queue: .main) { (operation, error) in
+            switch operation.output! {
             case .success(let response):
                 self.setupTunnel(accountToken: response.token, expiry: response.expires) { (result) in
                     completionHandler(result.map { response })
@@ -146,8 +146,8 @@ class Account {
             }
         }
 
-        operation.addDidFinishBlockObserver(queue: .main) { (operation, result) in
-            completionHandler(result)
+        operation.addDidFinishBlockObserver(queue: .main) { (operation, error) in
+            completionHandler(operation.output!)
         }
 
         exclusivityController.addOperation(operation, categories: [.exclusive])
@@ -164,8 +164,8 @@ class Account {
             .operation(payload: nil)
             .injectResult(from: makeRequest)
 
-        sendRequest.addDidFinishBlockObserver(queue: .main) { (operation, result) in
-            switch result {
+        sendRequest.addDidFinishBlockObserver(queue: .main) { (operation, error) in
+            switch operation.output! {
             case .success(let response):
                 self.expiry = response.expires
                 self.postExpiryUpdateNotification(newExpiry: response.expires)

@@ -163,7 +163,7 @@ final class RestOperation<Input, Response>: AsyncOperation, InputOperation, Outp
 
     override func main() {
         guard let payload = self.input else {
-            finish()
+            finish(error: OperationError.inputRequirement)
             return
         }
 
@@ -180,7 +180,7 @@ final class RestOperation<Input, Response>: AsyncOperation, InputOperation, Outp
         }
     }
 
-    override func operationDidCancel() {
+    override func operationDidCancel(error: Error?) {
         task?.cancel()
         task = nil
     }

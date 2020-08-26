@@ -476,8 +476,8 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
-        operation.addDidFinishBlockObserver(queue: dispatchQueue) { (operation, result) in
-            completionHandler(result)
+        operation.addDidFinishBlockObserver(queue: dispatchQueue) { (operation, error) in
+            completionHandler(operation.output!)
         }
 
         exclusivityController.addOperation(operation, categories: [.exclusive])
@@ -646,7 +646,7 @@ class SetTunnelNetworkSettingsOperation: AsyncOperation, InputOperation, OutputO
         }
     }
 
-    override func operationDidCancel() {
+    override func operationDidCancel(error: Error?) {
         finish()
     }
 }
