@@ -21,8 +21,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let simulatorTunnelProvider = SimulatorTunnelProviderHost()
     #endif
 
+    #if DEBUG
+    private let packetTunnelLogForwarder = LogStreamer<UTF8>(fileURLs: [ApplicationConfiguration.packetTunnelLogFileURL!])
+    #endif
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         initLoggingSystem(bundleIdentifier: Bundle.main.bundleIdentifier!)
+
+        #if DEBUG
+        packetTunnelLogForwarder.start { (str) in
+            print("\(str)")
+        }
+        #endif
 
         #if targetEnvironment(simulator)
         SimulatorTunnelProvider.shared.delegate = simulatorTunnelProvider
