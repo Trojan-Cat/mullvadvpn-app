@@ -10,7 +10,9 @@ import Foundation
 
 class GroupOperation: AsyncOperation {
     private let operationQueue = OperationQueue()
+    private let childLock = NSRecursiveLock()
     private var children: Set<Operation> = []
+    private var childError: Error?
 
     init(underlyingQueue: DispatchQueue? = nil, operations: [Operation]) {
         operationQueue.underlyingQueue = underlyingQueue
@@ -30,47 +32,46 @@ class GroupOperation: AsyncOperation {
         operationQueue.isSuspended = false
     }
 
-    override func operationDidCancel() {
+    override func operationDidCancel(error: Error?) {
         children.forEach { $0.cancel() }
     }
 
     func addChildren(_ operations: [Operation]) {
-        synchronized {
-            precondition(!self.isFinished, "Children cannot be added after the GroupOperation has finished.")
+        childLock.lock()
+        defer { childLock.unlock() }
 
-            self.children.formUnion(operations)
+        precondition(!self.isFinished, "Children cannot be added after the GroupOperation has finished.")
 
-            let completionOperation = BlockOperation { [weak self] in
-                self?._childrenDidFinish(operations)
-            }
+        children.formUnion(operations)
 
-            operations.forEach { completionOperation.addDependency($0) }
-
-            self.operationQueue.addOperations(operations, waitUntilFinished: false)
-            self.operationQueue.addOperation(completionOperation)
+        let completionOperation = BlockOperation { [weak self] in
+            self?._childrenDidFinish(operations)
         }
-    }
 
-    func childrenDidFinish(_ children: [Operation]) {
-        // Override in subclasses
-    }
+        operations.forEach { completionOperation.addDependency($0) }
 
-    func shouldFinishGroup() -> Bool {
-        return synchronized {
-            return self.children.isEmpty
-        }
+        self.operationQueue.addOperations(operations, waitUntilFinished: false)
+        self.operationQueue.addOperation(completionOperation)
     }
 
     // MARK: - Private
 
     private func _childrenDidFinish(_ children: [Operation]) {
-        synchronized {
-            self.children.subtract(children)
-            self.childrenDidFinish(children)
+        childLock.lock()
+        self.children.subtract(children)
 
-            if self.shouldFinishGroup() {
-                self.finish()
+        // Collect the first child error
+        if childError == nil {
+            let childErrors = children.compactMap { (op) -> Error? in
+                return (op as? OperationProtocol)?.error
             }
+            childError = childErrors.first
         }
+
+        if children.isEmpty {
+            finish(error: childError)
+        }
+
+        childLock.unlock()
     }
 }

@@ -18,8 +18,14 @@ protocol OutputOperation: OperationProtocol {
 
 extension OutputOperation {
     func finish(with output: Output) {
+        // Extract error from the `Result<T, F>` output
+        var error: Error?
+        if let anyResult = output as? AnyResultProtocol {
+            error = anyResult.error
+        }
+
         self.output = output
-        self.finish()
+        self.finish(error: error)
     }
 }
 
@@ -39,12 +45,18 @@ extension OutputOperation where Self: OperationSubclassing {
     }
 }
 
-extension OperationProtocol where Self: OutputOperation {
-    func addDidFinishBlockObserver(queue: DispatchQueue? = nil, _ block: @escaping (Self, Output) -> Void) {
-        addDidFinishBlockObserver(queue: queue) { (operation) in
-            if let output = operation.output {
-                block(operation, output)
-            }
+/// A type erasing `Result` protocol
+private protocol AnyResultProtocol {
+    var error: Error? { get }
+}
+
+extension Result: AnyResultProtocol {
+    var error: Error? {
+        switch self {
+        case .success:
+            return nil
+        case .failure(let error):
+            return error
         }
     }
 }

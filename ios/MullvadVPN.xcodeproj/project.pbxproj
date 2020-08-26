@@ -53,6 +53,7 @@
 		581CBCE62296B97300727D7F /* ViewControllerIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581CBCE52296B97300727D7F /* ViewControllerIdentifier.swift */; };
 		581CBCEC2298041B00727D7F /* SettingsAppVersionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581CBCEB2298041B00727D7F /* SettingsAppVersionCell.swift */; };
 		581CBCEE229826FD00727D7F /* StaticTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581CBCED229826FD00727D7F /* StaticTableViewDataSource.swift */; };
+		58283D1F24F65C600047E0E5 /* OperationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58283D1E24F65C600047E0E5 /* OperationError.swift */; };
 		582AE3102440A6CA00E6733A /* AccountTokenInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582AE30F2440A6CA00E6733A /* AccountTokenInput.swift */; };
 		582AE3122440CA0D00E6733A /* AccountTokenInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582AE3112440CA0D00E6733A /* AccountTokenInputTests.swift */; };
 		582AE3132440CA2700E6733A /* AccountTokenInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582AE30F2440A6CA00E6733A /* AccountTokenInput.swift */; };
@@ -283,6 +284,7 @@
 		581CBCE52296B97300727D7F /* ViewControllerIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewControllerIdentifier.swift; sourceTree = "<group>"; };
 		581CBCEB2298041B00727D7F /* SettingsAppVersionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsAppVersionCell.swift; sourceTree = "<group>"; };
 		581CBCED229826FD00727D7F /* StaticTableViewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaticTableViewDataSource.swift; sourceTree = "<group>"; };
+		58283D1E24F65C600047E0E5 /* OperationError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OperationError.swift; sourceTree = "<group>"; };
 		582AE30F2440A6CA00E6733A /* AccountTokenInput.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountTokenInput.swift; sourceTree = "<group>"; };
 		582AE3112440CA0D00E6733A /* AccountTokenInputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTokenInputTests.swift; sourceTree = "<group>"; };
 		582BB1AE229566420055B6EF /* SettingsCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsCell.swift; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 				5880B9C924EE733A00173CE4 /* GroupOperation.swift */,
 				580EE21A24B3236900F9D8A1 /* InputOperation.swift */,
 				580EE21424B3231200F9D8A1 /* OperationBlockObserver.swift */,
+				58283D1E24F65C600047E0E5 /* OperationError.swift */,
 				580EE20324B321EC00F9D8A1 /* OperationObserver.swift */,
 				580EE20024B321D500F9D8A1 /* OperationProtocol.swift */,
 				580EE21D24B3237F00F9D8A1 /* OutputOperation.swift */,
@@ -1020,6 +1023,7 @@
 				5877152E23981C5B001F8237 /* SettingsBasicCell.swift in Sources */,
 				58FD5BE724192A2C00112C88 /* AppStoreReceipt.swift in Sources */,
 				5835B7CC233B76CB0096D79F /* TunnelManager.swift in Sources */,
+				58283D1F24F65C600047E0E5 /* OperationError.swift in Sources */,
 				5815039724D6ECAE00C9C50E /* CustomFormatLogHandler.swift in Sources */,
 				5815039D24D6ECE600C9C50E /* TextFileOutputStream.swift in Sources */,
 				581CBCEE229826FD00727D7F /* StaticTableViewDataSource.swift in Sources */,

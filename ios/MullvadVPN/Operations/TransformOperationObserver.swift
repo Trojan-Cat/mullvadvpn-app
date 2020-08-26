@@ -11,26 +11,26 @@ import Foundation
 /// A private type erasing observer that type casts the input operation type to the expected
 /// operation type before calling the wrapped observer
 class TransformOperationObserver<S: OperationProtocol>: OperationObserver {
-    private let willFinish: (S) -> Void
-    private let didFinish: (S) -> Void
+    private let willFinish: (S, Error?) -> Void
+    private let didFinish: (S, Error?) -> Void
 
     init<T: OperationObserver>(_ observer: T) {
         willFinish = Self.wrap(observer.operationWillFinish)
         didFinish = Self.wrap(observer.operationDidFinish)
     }
 
-    func operationWillFinish(_ operation: S) {
-        willFinish(operation)
+    func operationWillFinish(_ operation: S, error: Error?) {
+        willFinish(operation, error)
     }
 
-    func operationDidFinish(_ operation: S) {
-        didFinish(operation)
+    func operationDidFinish(_ operation: S, error: Error?) {
+        didFinish(operation, error)
     }
 
-    private class func wrap<U>(_ body: @escaping (U) -> Void) -> (S) -> Void {
-        return { (operation: S) in
+    private class func wrap<U>(_ body: @escaping (U, Error?) -> Void) -> (S, Error?) -> Void {
+        return { (operation: S, error: Error?) in
             if let transformed = operation as? U {
-                body(transformed)
+                body(transformed, error)
             } else {
                 fatalError("\(Self.self) failed to cast \(S.self) to \(U.self)")
             }

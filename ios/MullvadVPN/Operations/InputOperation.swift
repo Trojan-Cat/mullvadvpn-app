@@ -44,7 +44,7 @@ extension InputOperation {
     @discardableResult func inject<Dependency>(from dependency: Dependency, via block: @escaping (Dependency.Output) -> Input?) -> Self
         where Dependency: OutputOperation
     {
-        let observer = OperationBlockObserver<Dependency>(willFinish: { [weak self] (operation) in
+        let observer = OperationBlockObserver<Dependency>(willFinish: { [weak self] (operation, error) in
             guard let self = self else { return }
 
             if let output = operation.output {

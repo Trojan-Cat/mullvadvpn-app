@@ -33,7 +33,7 @@ class TransformOperation<Input, Output>: AsyncOperation, InputOperation, OutputO
 
     override func main() {
         guard let input = input else {
-            self.finish()
+            self.finish(error: OperationError.inputRequirement)
             return
         }
 
