@@ -220,7 +220,7 @@ class AppStorePaymentManager: NSObject, SKPaymentTransactionObserver {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         operationQueue.addOperation(operation)
@@ -254,7 +254,7 @@ class AppStorePaymentManager: NSObject, SKPaymentTransactionObserver {
                     .operation(payload: payload)
 
                 createApplePaymentOperation.addDidFinishBlockObserver { (operation, error) in
-                    switch operation.output! {
+                    switch operation.output.value! {
                     case .success(let response):
                         self.logger.info("AppStore Receipt was processed. Time added: \(response.timeAdded), New expiry: \(response.newExpiry)")
 

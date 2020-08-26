@@ -358,7 +358,7 @@ class TunnelManager {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -403,7 +403,7 @@ class TunnelManager {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -430,7 +430,7 @@ class TunnelManager {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -491,7 +491,7 @@ class TunnelManager {
             }
         }
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -585,7 +585,7 @@ class TunnelManager {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -616,7 +616,7 @@ class TunnelManager {
             .injectResult(from: makePayloadOperation)
 
         getPubkeyOperation.addDidFinishBlockObserver { (operation, error) in
-            let result = operation.output!.map { (_) -> Bool in
+            let result = operation.output.value!.map { (_) -> Bool in
                 return true
             }.mapError { (restError) -> Error in
                 return .verifyWireguardKey(restError)
@@ -672,7 +672,7 @@ class TunnelManager {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -710,7 +710,7 @@ class TunnelManager {
         }
 
         operation.addDidFinishBlockObserver { (operation, error) in
-            completionHandler(operation.output!)
+            completionHandler(operation.output.value!)
         }
 
         exclusityController.addOperation(operation, categories: [.tunnelControl])
@@ -827,7 +827,7 @@ class TunnelManager {
         let operation = rest.pushWireguardKey().operation(payload: payload)
 
         operation.addDidFinishBlockObserver(queue: dispatchQueue) { (operation, error) in
-            let updateResult = operation.output!
+            let updateResult = operation.output.value!
                 .mapError({ (restError) -> Error in
                     return .pushWireguardKey(restError)
                 })
@@ -851,7 +851,7 @@ class TunnelManager {
         let operation = rest.deleteWireguardKey().operation(payload: payload)
 
         operation.addDidFinishBlockObserver(queue: dispatchQueue) { (operation, error) in
-            let result = operation.output!.map({ () -> Bool in
+            let result = operation.output.value!.map({ () -> Bool in
                 return true
             }).flatMapError { (restError) -> Result<Bool, Error> in
                 if case .server(.pubKeyNotFound) = restError {
@@ -884,7 +884,7 @@ class TunnelManager {
         let operation = rest.replaceWireguardKey().operation(payload: payload)
 
         operation.addDidFinishBlockObserver(queue: dispatchQueue) { (operation, error) in
-            let updateResult = operation.output!
+            let updateResult = operation.output.value!
                 .mapError({ (restError) -> Error in
                     return .replaceWireguardKey(restError)
                 })

@@ -11,7 +11,7 @@ import Foundation
 protocol OutputOperation: OperationProtocol {
     associatedtype Output
 
-    var output: Output? { get set }
+    var output: PendingValue<Output> { get set }
 
     func finish(with output: Output)
 }
@@ -24,17 +24,17 @@ extension OutputOperation {
             error = anyResult.error
         }
 
-        self.output = output
+        self.output = .ready(output)
         self.finish(error: error)
     }
 }
 
 private var kOutputOperationAssociatedValue = 0
 extension OutputOperation where Self: OperationSubclassing {
-    var output: Output? {
+    var output: PendingValue<Output> {
         get {
             return synchronized {
-                return AssociatedValue.get(object: self, key: &kOutputOperationAssociatedValue)
+                return AssociatedValue.get(object: self, key: &kOutputOperationAssociatedValue) ?? .pending
             }
         }
         set {

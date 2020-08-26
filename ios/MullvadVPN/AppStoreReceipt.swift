@@ -79,7 +79,7 @@ enum AppStoreReceipt {
     private static func refreshReceipt(receiptProperties: [String: Any]?, completionHandler: @escaping (Result<Data, Error>) -> Void) {
         let refreshOperation = ReceiptRefreshOperation(receiptProperties: receiptProperties)
         refreshOperation.addDidFinishBlockObserver { (operation, error) in
-            let result = operation.output!
+            let result = operation.output.value!
                 .mapError { Error.refresh($0) }
                 .flatMap { Self.readFromDisk() }
             completionHandler(result)

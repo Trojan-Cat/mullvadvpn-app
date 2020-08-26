@@ -65,7 +65,7 @@ class RetryOperation<OperationType, Success, Failure: Error>: AsyncOperation, Ou
             guard let self = self else { return }
 
             // Operation finished without output set?
-            guard let result = operation.output else {
+            guard case .ready(let result) = operation.output else {
                 // Propagate the child error if set
                 self.finish(error: error)
                 return
@@ -111,9 +111,9 @@ class RetryOperation<OperationType, Success, Failure: Error>: AsyncOperation, Ou
 extension RetryOperation: InputOperation where OperationType: InputOperation {
     typealias Input = OperationType.Input
 
-    func operationDidSetInput(_ input: OperationType.Input?) {
+    func operationDidSetInput(_ input: OperationType.Input) {
         setChildConfigurator { (child) in
-            child.input = input
+            child.input = .ready(input)
         }
     }
 }
