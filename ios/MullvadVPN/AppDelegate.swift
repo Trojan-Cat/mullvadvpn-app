@@ -29,8 +29,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         initLoggingSystem(bundleIdentifier: Bundle.main.bundleIdentifier!)
 
         #if DEBUG
+        let stdoutStream = TextFileOutputStream.standardOutputStream()
         packetTunnelLogForwarder.start { (str) in
-            print("\(str)")
+            stdoutStream.write("\(str)\n")
         }
         #endif
 
