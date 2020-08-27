@@ -33,6 +33,12 @@ pub enum Error {
     #[error(display = "Failed to execute netlink control request")]
     NetlinkControlMessageError(#[error(source)] nl_message::Error),
 
+    #[error(display = "Failed to open netlink socket")]
+    NetlinkSocketError(#[error(source)] std::io::Error),
+
+    #[error(display = "Failed to send netlink control request")]
+    NetlinkRequestError(#[error(source)] netlink_proto::Error<NetlinkControlMessage>),
+
     #[error(display = "WireGuard netlink interface unavailable. Is the kernel module loaded?")]
     WireguardNetlinkInterfaceUnavailable,
 
@@ -207,10 +213,10 @@ impl Handle {
     pub async fn connect() -> Result<Self, Error> {
         let message_type = Self::get_wireguard_message_type().await?;
         let (conn, wg_handle, _messages) =
-            netlink_proto::new_connection(Protocol::Generic).expect("handle error correctly");
+            netlink_proto::new_connection(Protocol::Generic).map_err(Error::NetlinkSocketError)?;
         tokio02::spawn(conn);
         let (conn, route_handle, _messages) =
-            rtnetlink::new_connection().expect("handle error correctly");
+            rtnetlink::new_connection().map_err(Error::NetlinkSocketError)?;
         tokio02::spawn(conn);
 
         Ok(Self {
@@ -222,7 +228,7 @@ impl Handle {
 
     async fn get_wireguard_message_type() -> Result<u16, Error> {
         let (conn, mut handle, _messages) =
-            netlink_proto::new_connection(Protocol::Generic).unwrap();
+            netlink_proto::new_connection(Protocol::Generic).map_err(Error::NetlinkSocketError)?;
 
         tokio02::spawn(conn);
         let mut message: NetlinkMessage<NetlinkControlMessage> =
@@ -234,7 +240,7 @@ impl Handle {
 
         let mut req = handle
             .request(message, SocketAddr::new(0, 0))
-            .expect("failed");
+            .map_err(Error::NetlinkRequestError)?;
         let response = req.next().await;
         if let Some(response) = response {
             if let NetlinkPayload::InnerMessage(msg) = response.payload {
