@@ -64,15 +64,6 @@ impl WireguardMonitor {
         tun_provider: &mut TunProvider,
         route_manager: &mut routing::RouteManager,
     ) -> Result<WireguardMonitor> {
-        #[cfg(not(target_os = "linux"))]
-        let tunnel = Box::new(WgGoTunnel::start_tunnel(
-            &config,
-            log_path,
-            tun_provider,
-            Self::get_tunnel_routes(config),
-        )?);
-
-        #[cfg(target_os = "linux")]
         let tunnel = Self::open_tunnel(&config, log_path, tun_provider, route_manager)?;
         let iface_name = tunnel.get_interface_name().to_string();
         route_manager
@@ -131,13 +122,13 @@ impl WireguardMonitor {
         Ok(monitor)
     }
 
-    #[cfg(target_os = "linux")]
     fn open_tunnel(
         config: &Config,
         log_path: Option<&Path>,
         tun_provider: &mut TunProvider,
         route_manager: &mut routing::RouteManager,
     ) -> Result<Box<dyn Tunnel>> {
+        #[cfg(target_os = "linux")]
         match wireguard_kernel::KernelTunnel::new(route_manager.runtime_handle(), config) {
             Ok(tunnel) => {
                 return Ok(Box::new(tunnel));

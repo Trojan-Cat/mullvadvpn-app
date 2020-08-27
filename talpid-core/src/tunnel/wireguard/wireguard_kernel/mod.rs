@@ -261,7 +261,7 @@ impl Handle {
 
         // set link to be up
         message.header.flags = netlink_packet_route::IFF_UP;
-        message.header.change_mask = netlink_packet_route::IFF_UP;
+        // message.header.change_mask = netlink_packet_route::IFF_UP;
         // set link name
         message.nlas.push(LinkNla::IfName(name.clone()));
         // set link MTU
@@ -363,7 +363,7 @@ impl Handle {
             Some(received_message) => match received_message.payload {
                 NetlinkPayload::InnerMessage(inner) => Ok(inner),
                 NetlinkPayload::Error(err) => {
-                    if err.code == -19 {
+                    if err.code == -libc::ENODEV {
                         Err(Error::NoDevice)
                     } else {
                         Err(Error::WgGetConfError(err))
