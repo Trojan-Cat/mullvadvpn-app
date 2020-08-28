@@ -11,7 +11,7 @@ import Foundation
 enum PendingValue<T> {
     case pending
     case ready(T)
-    
+
     var value: T? {
         switch self {
         case .ready(let value):

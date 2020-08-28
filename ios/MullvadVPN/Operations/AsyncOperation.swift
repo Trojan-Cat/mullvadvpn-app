@@ -92,7 +92,7 @@ class AsyncOperation: Operation, OperationProtocol {
                     stateLock.withCriticalBlock {
                         self.observers.forEach { $0.operationWillExecute(self) }
                     }
-                    
+
                     setExecuting(true)
                     main()
 
