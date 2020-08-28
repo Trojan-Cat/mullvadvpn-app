@@ -65,7 +65,7 @@ class RetryOperation<OperationType, Success, Failure: Error>: AsyncOperation, Ou
             guard let self = self else { return }
 
             // Operation finished without output set?
-            guard case .ready(let result) = operation.output else {
+            guard let result = operation.output.value else {
                 // Propagate the child error if set
                 self.finish(error: error)
                 return

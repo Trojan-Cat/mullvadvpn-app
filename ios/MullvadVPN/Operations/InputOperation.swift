@@ -11,7 +11,7 @@ import Foundation
 enum PendingValue<T> {
     case pending
     case ready(T)
-
+    
     var value: T? {
         switch self {
         case .ready(let value):
@@ -48,7 +48,7 @@ extension InputOperation where Self: OperationSubclassing {
             synchronized {
                 AssociatedValue.set(object: self, key: &kInputOperationAssociatedValue, value: newValue)
 
-                if case .ready(let newValue) = newValue {
+                if let newValue = newValue.value {
                     operationDidSetInput(newValue)
                 }
             }
@@ -103,17 +103,4 @@ extension InputOperation {
             }
         }
     }
-
-    /// Inject input from operation that outputs `Result<Input, Never>`
-    @discardableResult func injectResult<Dependency>(from dependency: Dependency) -> Self
-        where Dependency: OutputOperation, Dependency.Output == Result<Input, Never>
-    {
-        return self.inject(from: dependency) { (output) -> InjectionResult<Input> in
-            switch output {
-            case .success(let value):
-                return .success(value)
-            }
-        }
-    }
-
 }

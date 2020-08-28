@@ -89,8 +89,16 @@ class AsyncOperation: Operation, OperationProtocol {
             } else {
                 switch checkDependencyRequirements() {
                 case .success:
+                    stateLock.withCriticalBlock {
+                        self.observers.forEach { $0.operationWillExecute(self) }
+                    }
+                    
                     setExecuting(true)
                     main()
+
+                    stateLock.withCriticalBlock {
+                        self.observers.forEach { $0.operationDidExecute(self) }
+                    }
 
                 case .failure(let operationError):
                     cancel(error: operationError)

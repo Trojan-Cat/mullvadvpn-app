@@ -121,6 +121,10 @@
 		5888AD83227B11080051EB06 /* SelectLocationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5888AD82227B11080051EB06 /* SelectLocationCell.swift */; };
 		5888AD87227B17950051EB06 /* SelectLocationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5888AD86227B17950051EB06 /* SelectLocationController.swift */; };
 		588D2FE3248AC27F00E313F7 /* AsyncOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58E973DD24850EB600096F90 /* AsyncOperation.swift */; };
+		588FBBAD24F7C4B400FFF071 /* MergeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588FBBAB24F7C4B400FFF071 /* MergeOperation.swift */; };
+		588FBBAE24F7C4B400FFF071 /* MergeResultOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588FBBAC24F7C4B400FFF071 /* MergeResultOperation.swift */; };
+		588FBBAF24F7C4B800FFF071 /* MergeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588FBBAB24F7C4B400FFF071 /* MergeOperation.swift */; };
+		588FBBB024F7C4B800FFF071 /* MergeResultOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588FBBAC24F7C4B400FFF071 /* MergeResultOperation.swift */; };
 		58906DE02445C7A5002F0673 /* NEProviderStopReason+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58906DDF2445C7A5002F0673 /* NEProviderStopReason+Debug.swift */; };
 		58907D9524D17B4E00CFC3F5 /* DisconnectSplitButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58907D9424D17B4E00CFC3F5 /* DisconnectSplitButton.swift */; };
 		5896AE7E246ACE65005B36CB /* KeychainAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FAEDEB245059F000CB0F5B /* KeychainAttributes.swift */; };
@@ -324,6 +328,8 @@
 		5888AD7E2279B6BF0051EB06 /* RelayStatusIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayStatusIndicatorView.swift; sourceTree = "<group>"; };
 		5888AD82227B11080051EB06 /* SelectLocationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectLocationCell.swift; sourceTree = "<group>"; };
 		5888AD86227B17950051EB06 /* SelectLocationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectLocationController.swift; sourceTree = "<group>"; };
+		588FBBAB24F7C4B400FFF071 /* MergeOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeOperation.swift; sourceTree = "<group>"; };
+		588FBBAC24F7C4B400FFF071 /* MergeResultOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeResultOperation.swift; sourceTree = "<group>"; };
 		58906DDF2445C7A5002F0673 /* NEProviderStopReason+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NEProviderStopReason+Debug.swift"; sourceTree = "<group>"; };
 		58907D9424D17B4E00CFC3F5 /* DisconnectSplitButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisconnectSplitButton.swift; sourceTree = "<group>"; };
 		5894E725236B2801008A2793 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -460,6 +466,8 @@
 				580EE20524B3222200F9D8A1 /* ExclusivityController.swift */,
 				5880B9C924EE733A00173CE4 /* GroupOperation.swift */,
 				580EE21A24B3236900F9D8A1 /* InputOperation.swift */,
+				588FBBAB24F7C4B400FFF071 /* MergeOperation.swift */,
+				588FBBAC24F7C4B400FFF071 /* MergeResultOperation.swift */,
 				580EE21424B3231200F9D8A1 /* OperationBlockObserver.swift */,
 				58283D1E24F65C600047E0E5 /* OperationError.swift */,
 				580EE20324B321EC00F9D8A1 /* OperationObserver.swift */,
@@ -1007,6 +1015,7 @@
 				58B8743222B25A7600015324 /* WireguardAssociatedAddresses.swift in Sources */,
 				58C6B34F22BB7AC0003C19AD /* IPAddressRange.swift in Sources */,
 				58F3C09C249B99DD003E76BE /* Curve25519.swift in Sources */,
+				588FBBAD24F7C4B400FFF071 /* MergeOperation.swift in Sources */,
 				58DF28A52417CB4B00E836B0 /* AppStorePaymentManager.swift in Sources */,
 				580EE22124B3240100F9D8A1 /* TransformOperationObserver.swift in Sources */,
 				582BB1AF229566420055B6EF /* SettingsCell.swift in Sources */,
@@ -1026,6 +1035,7 @@
 				5835B7CC233B76CB0096D79F /* TunnelManager.swift in Sources */,
 				58283D1F24F65C600047E0E5 /* OperationError.swift in Sources */,
 				5815039724D6ECAE00C9C50E /* CustomFormatLogHandler.swift in Sources */,
+				588FBBAE24F7C4B400FFF071 /* MergeResultOperation.swift in Sources */,
 				5815039D24D6ECE600C9C50E /* TextFileOutputStream.swift in Sources */,
 				581CBCEE229826FD00727D7F /* StaticTableViewDataSource.swift in Sources */,
 				58CE5E64224146200008646E /* AppDelegate.swift in Sources */,
@@ -1089,6 +1099,7 @@
 				58BA693223EAE1AE009DC256 /* SimulatorTunnelProvider.swift in Sources */,
 				580EE21924B3235100F9D8A1 /* AnyOperationObserver.swift in Sources */,
 				580EE21324B322FC00F9D8A1 /* ResultOperation.swift in Sources */,
+				588FBBAF24F7C4B800FFF071 /* MergeOperation.swift in Sources */,
 				58C6B36522C10596003C19AD /* AnyIPEndpoint+Wireguard.swift in Sources */,
 				58CE5E7C224146470008646E /* PacketTunnelProvider.swift in Sources */,
 				58F3C09A249B9852003E76BE /* x25519.c in Sources */,
@@ -1121,6 +1132,7 @@
 				58561C9A239A5D1500BD6B5E /* IPEndpoint.swift in Sources */,
 				580EE22524B3243100F9D8A1 /* AsyncBlockOperation.swift in Sources */,
 				580EE20D24B3225F00F9D8A1 /* DelayOperation.swift in Sources */,
+				588FBBB024F7C4B800FFF071 /* MergeResultOperation.swift in Sources */,
 				588534BF246193D90018B744 /* AutomaticKeyRotationManager.swift in Sources */,
 				58781CCE22AE8918009B9D8E /* RelayConstraints.swift in Sources */,
 				581503A024D6F01E00C9C50E /* LogRotation.swift in Sources */,
